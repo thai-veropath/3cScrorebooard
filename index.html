@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Billiards Scoreboard</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #1e293b;
+      --panel2: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #22c55e;
+      --danger: #ef4444;
+      --warn: #f59e0b;
+      --active: #2563eb;
+      --input: #0b1220;
+      --border: #475569;
+      --gold: #fde68a;
+      --menu: rgba(15, 23, 42, 0.96);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+
+    html, body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
+    }
+
+    .app {
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      grid-template-rows: auto 1fr minmax(96px, 24vh);
+      gap: 8px;
+      padding: 8px;
+      overflow: hidden;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      min-height: 44px;
+    }
+
+    .title {
+      font-size: 20px;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .panel {
+      background: var(--panel);
+      border-radius: 16px;
+      padding: 12px;
+    }
+
+    .menu-btn, .icon-btn, button {
+      border: none;
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-size: 16px;
+      font-weight: 700;
+      color: white;
+      background: var(--panel2);
+      cursor: pointer;
+    }
+
+    .icon-btn {
+      min-width: 44px;
+      min-height: 44px;
+      padding: 0 12px;
+      font-size: 20px;
+    }
+
+    button.green { background: var(--accent); }
+    button.red { background: var(--danger); }
+    button.orange { background: var(--warn); color: #111827; }
+    button.blue { background: var(--active); }
+
+    .menu-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.45);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      z-index: 30;
+    }
+
+    .menu-overlay.open {
+      display: flex;
+    }
+
+    .menu-card {
+      width: min(100%, 560px);
+      max-height: 90vh;
+      overflow: auto;
+      background: var(--menu);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+      border-radius: 20px;
+      padding: 16px;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.35);
+    }
+
+    .menu-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .menu-title {
+      font-size: 22px;
+      font-weight: 800;
+    }
+
+    .menu-section {
+      margin-bottom: 16px;
+    }
+
+    .setup-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .name-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    label {
+      font-size: 13px;
+      color: var(--muted);
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: var(--input);
+      color: var(--text);
+      font-size: 16px;
+    }
+
+    .menu-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .players {
+      min-height: 0;
+      display: grid;
+      gap: 8px;
+      overflow: hidden;
+    }
+
+    .players.players-2 {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr;
+    }
+
+    .players.players-3 {
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: 1fr;
+    }
+
+    .players.players-4 {
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: 1fr 1fr;
+    }
+
+    .player-card {
+      background: var(--panel);
+      border-radius: 18px;
+      padding: 10px;
+      border: 2px solid transparent;
+      transition: 0.2s;
+      display: grid;
+      grid-template-rows: auto auto 1fr auto;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .player-card.active {
+      border-color: var(--active);
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2) inset;
+    }
+
+    .player-name {
+      text-align: center;
+      font-size: clamp(16px, 2.1vw, 28px);
+      font-weight: 800;
+      margin-bottom: 4px;
+      line-height: 1.1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .small-stats {
+      display: flex;
+      justify-content: space-between;
+      color: var(--muted);
+      font-size: clamp(11px, 1.1vw, 15px);
+      margin-bottom: 6px;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .score {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      font-size: clamp(48px, 12vw, 118px);
+      font-weight: 900;
+      line-height: 1;
+      min-height: 0;
+    }
+
+    .players.players-3 .score {
+      font-size: clamp(40px, 9vw, 90px);
+    }
+
+    .players.players-4 .score {
+      font-size: clamp(42px, 9vw, 84px);
+    }
+
+    .btn-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 6px;
+    }
+
+    .btn-grid button {
+      padding: 10px 8px;
+      font-size: clamp(16px, 1.8vw, 24px);
+      min-height: 44px;
+    }
+
+    .btn-grid button.big {
+      min-height: 52px;
+      font-size: clamp(20px, 2vw, 28px);
+    }
+
+    .bottom-panel {
+      display: grid;
+      grid-template-columns: 1.1fr 1.4fr;
+      gap: 8px;
+      min-height: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .controls-panel, .history-panel {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      min-height: 0;
+    }
+
+    .history-panel.fixed-scroll {
+      background: var(--panel);
+      border-radius: 16px;
+      padding: 10px;
+      min-height: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .controls-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .controls-grid button {
+      min-height: 44px;
+      font-size: clamp(13px, 1.6vw, 18px);
+      padding: 8px;
+    }
+
+    .info-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--muted);
+      font-size: clamp(11px, 1.2vw, 15px);
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .winner {
+      text-align: center;
+      font-size: clamp(16px, 2vw, 24px);
+      font-weight: 800;
+      color: var(--gold);
+      margin-top: 6px;
+    }
+
+    .history-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .history-list {
+      min-height: 0;
+      height: 100%;
+      overflow-y: auto;
+      overflow-x: hidden;
+      font-size: 13px;
+      color: var(--muted);
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .history-item {
+      padding: 4px 0;
+      border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    @media (max-width: 900px) and (orientation: portrait) {
+      html, body {
+        overflow: auto;
+      }
+
+      .app {
+        height: auto;
+        min-height: 100vh;
+        grid-template-rows: auto auto auto;
+      }
+
+      .players.players-2,
+      .players.players-3,
+      .players.players-4,
+      .bottom-panel,
+      .controls-grid,
+      .setup-grid,
+      .name-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .players.players-3,
+      .players.players-4 {
+        grid-template-rows: auto;
+      }
+
+      .player-card {
+        min-height: 260px;
+      }
+
+      .bottom-panel {
+        grid-template-columns: 1fr;
+        min-height: auto;
+        height: auto;
+      }
+
+      .controls-panel,
+      .history-panel {
+        height: auto;
+      }
+
+      .history-list {
+        max-height: 180px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="topbar">
+      <div class="title">🎱 Billiards Scoreboard</div>
+      <div class="top-actions">
+        <button class="menu-btn blue" onclick="toggleMenu(true)">Menu</button>
+      </div>
+    </div>
+
+    <div id="players" class="players players-2"></div>
+
+    <div class="bottom-panel">
+      <div class="controls-panel">
+        <div class="controls-grid">
+          <button class="blue" onclick="switchTurn()">Đổi lượt</button>
+          <button class="orange" onclick="undoMove()">Undo</button>
+          <button onclick="newGame()">Ván mới</button>
+          <button class="red" onclick="resetAll()">Reset hết</button>
+        </div>
+        <div class="info-bar">
+          <div>Lượt hiện tại: <strong id="currentPlayerLabel">Player 1</strong></div>
+          <div>Target: <strong id="targetLabel">30</strong></div>
+          <div>Innings: <strong id="inningCount">0</strong></div>
+          <div>Players: <strong id="playerCountLabel">2</strong></div>
+        </div>
+        <div id="winner" class="winner"></div>
+      </div>
+
+      <div class="history-panel">
+        <div class="history-title">Lịch sử thao tác</div>
+        <div id="historyList" class="history-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="menuOverlay" class="menu-overlay" onclick="handleOverlayClick(event)">
+    <div class="menu-card">
+      <div class="menu-header">
+        <div class="menu-title">Settings</div>
+        <button class="icon-btn" onclick="toggleMenu(false)">×</button>
+      </div>
+
+      <div class="menu-section">
+        <div class="setup-grid">
+          <div>
+            <label for="playerCount">Số người chơi</label>
+            <select id="playerCount">
+              <option value="2">2 Players</option>
+              <option value="3">3 Players</option>
+              <option value="4">4 Players</option>
+            </select>
+          </div>
+          <div>
+            <label for="target">Target Score</label>
+            <input id="target" type="number" value="30" min="1" />
+          </div>
+        </div>
+      </div>
+
+      <div class="menu-section">
+        <div class="name-grid">
+          <div>
+            <label for="name1">Player 1 Name</label>
+            <input id="name1" type="text" value="Player 1" placeholder="Player 1" />
+          </div>
+          <div>
+            <label for="name2">Player 2 Name</label>
+            <input id="name2" type="text" value="Player 2" placeholder="Player 2" />
+          </div>
+          <div id="nameWrap3" class="hidden">
+            <label for="name3">Player 3 Name</label>
+            <input id="name3" type="text" value="Player 3" placeholder="Player 3" />
+          </div>
+          <div id="nameWrap4" class="hidden">
+            <label for="name4">Player 4 Name</label>
+            <input id="name4" type="text" value="Player 4" placeholder="Player 4" />
+          </div>
+        </div>
+      </div>
+
+      <div class="menu-actions">
+        <button onclick="toggleMenu(false)">Đóng</button>
+        <button class="blue" onclick="applySetup()">Lưu Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let state = createDefaultState(2);
+
+    function createDefaultPlayers(count) {
+      return Array.from({ length: count }, (_, i) => ({
+        id: i + 1,
+        name: `Player ${i + 1}`,
+        score: 0,
+        turns: 0
+      }));
+    }
+
+    function createDefaultState(count) {
+      return {
+        playerCount: count,
+        players: createDefaultPlayers(count),
+        currentPlayerIndex: 0,
+        innings: 0,
+        target: 30,
+        history: []
+      };
+    }
+
+    function snapshotState() {
+      return JSON.parse(JSON.stringify({
+        playerCount: state.playerCount,
+        players: state.players,
+        currentPlayerIndex: state.currentPlayerIndex,
+        innings: state.innings,
+        target: state.target
+      }));
+    }
+
+    function saveStateSnapshot(action) {
+      state.history.push({ action, snapshot: snapshotState() });
+      renderHistory();
+    }
+
+    function avg(score, turns) {
+      if (!turns) return '0.00';
+      return (score / turns).toFixed(2);
+    }
+
+    function getPlayerNameFromInput(index) {
+      const input = document.getElementById(`name${index + 1}`);
+      return (input?.value || `Player ${index + 1}`).trim() || `Player ${index + 1}`;
+    }
+
+    function syncNamesFromInputs() {
+      state.players.forEach((player, index) => {
+        player.name = getPlayerNameFromInput(index);
+      });
+    }
+
+    function updateNameInputsVisibility() {
+      const count = parseInt(document.getElementById('playerCount').value, 10);
+      document.getElementById('nameWrap3').classList.toggle('hidden', count < 3);
+      document.getElementById('nameWrap4').classList.toggle('hidden', count < 4);
+    }
+
+    function toggleMenu(show) {
+      document.getElementById('menuOverlay').classList.toggle('open', show);
+    }
+
+    function handleOverlayClick(event) {
+      if (event.target.id === 'menuOverlay') {
+        toggleMenu(false);
+      }
+    }
+
+    function applySetup() {
+      saveStateSnapshot('Áp dụng settings');
+      const count = parseInt(document.getElementById('playerCount').value, 10);
+      const target = parseInt(document.getElementById('target').value || '30', 10);
+      const newPlayers = [];
+
+      for (let i = 0; i < count; i++) {
+        newPlayers.push({
+          id: i + 1,
+          name: getPlayerNameFromInput(i),
+          score: 0,
+          turns: 0
+        });
+      }
+
+      state.playerCount = count;
+      state.players = newPlayers;
+      state.currentPlayerIndex = 0;
+      state.innings = 0;
+      state.target = target > 0 ? target : 30;
+      document.getElementById('winner').textContent = '';
+      updateNameInputsVisibility();
+      render();
+      toggleMenu(false);
+    }
+
+    function addScore(playerId, delta) {
+      if (document.getElementById('winner').textContent) return;
+      syncNamesFromInputs();
+      saveStateSnapshot(`P${playerId} ${delta > 0 ? '+' : ''}${delta}`);
+      const player = state.players.find(p => p.id === playerId);
+      if (!player) return;
+
+      player.score += delta;
+      if (player.score < 0) player.score = 0;
+      if (delta > 0) player.turns += 1;
+
+      checkWinner();
+      render();
+    }
+
+    function switchTurn() {
+      syncNamesFromInputs();
+      saveStateSnapshot('Đổi lượt');
+      state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.playerCount;
+      state.innings += 1;
+      render();
+    }
+
+    function undoMove() {
+      if (state.history.length === 0) return;
+      const last = state.history.pop().snapshot;
+      state.playerCount = last.playerCount;
+      state.players = last.players;
+      state.currentPlayerIndex = last.currentPlayerIndex;
+      state.innings = last.innings;
+      state.target = last.target;
+
+      document.getElementById('playerCount').value = String(state.playerCount);
+      document.getElementById('target').value = String(state.target);
+      document.getElementById('name1').value = state.players[0]?.name || 'Player 1';
+      document.getElementById('name2').value = state.players[1]?.name || 'Player 2';
+      document.getElementById('name3').value = state.players[2]?.name || 'Player 3';
+      document.getElementById('name4').value = state.players[3]?.name || 'Player 4';
+
+      document.getElementById('winner').textContent = '';
+      updateNameInputsVisibility();
+      checkWinner();
+      render();
+      renderHistory();
+    }
+
+    function newGame() {
+      syncNamesFromInputs();
+      saveStateSnapshot('Ván mới');
+      state.players.forEach(p => {
+        p.score = 0;
+        p.turns = 0;
+      });
+      state.currentPlayerIndex = 0;
+      state.innings = 0;
+      document.getElementById('winner').textContent = '';
+      render();
+    }
+
+    function resetAll() {
+      state = createDefaultState(parseInt(document.getElementById('playerCount').value, 10) || 2);
+      document.getElementById('target').value = '30';
+      document.getElementById('name1').value = 'Player 1';
+      document.getElementById('name2').value = 'Player 2';
+      document.getElementById('name3').value = 'Player 3';
+      document.getElementById('name4').value = 'Player 4';
+      document.getElementById('winner').textContent = '';
+      updateNameInputsVisibility();
+      render();
+      renderHistory();
+    }
+
+    function checkWinner() {
+      const winner = state.players.find(p => p.score >= state.target);
+      document.getElementById('winner').textContent = winner ? `🏆 ${winner.name} thắng!` : '';
+    }
+
+    function createPlayerCard(player, isActive) {
+      return `
+        <div class="player-card ${isActive ? 'active' : ''}">
+          <div class="player-name">${escapeHtml(player.name)}</div>
+          <div class="small-stats">
+            <span>Lượt: <span>${player.turns}</span></span>
+            <span>Avg: <span>${avg(player.score, player.turns)}</span></span>
+          </div>
+          <div class="score">${player.score}</div>
+          <div class="btn-grid">
+            <button class="big green" onclick="addScore(${player.id}, 1)">+1</button>
+            <button class="big red" onclick="addScore(${player.id}, -1)">-1</button>
+            <button onclick="addScore(${player.id}, 2)">+2</button>
+            <button onclick="addScore(${player.id}, 3)">+3</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function renderPlayers() {
+      const playersWrap = document.getElementById('players');
+      playersWrap.className = `players players-${state.playerCount}`;
+      playersWrap.innerHTML = state.players
+        .map((player, index) => createPlayerCard(player, index === state.currentPlayerIndex))
+        .join('');
+    }
+
+    function renderHistory() {
+      const historyList = document.getElementById('historyList');
+      if (state.history.length === 0) {
+        historyList.innerHTML = "<div class='history-item'>Chưa có thao tác nào.</div>";
+        return;
+      }
+
+      historyList.innerHTML = state.history
+        .slice()
+        .reverse()
+        .map(item => `<div class="history-item">${escapeHtml(item.action)}</div>`)
+        .join('');
+    }
+
+    function render() {
+      syncNamesFromInputs();
+      state.target = parseInt(document.getElementById('target').value || '30', 10) || 30;
+      renderPlayers();
+
+      const currentPlayer = state.players[state.currentPlayerIndex];
+      document.getElementById('currentPlayerLabel').textContent = currentPlayer ? currentPlayer.name : '-';
+      document.getElementById('targetLabel').textContent = state.target;
+      document.getElementById('inningCount').textContent = state.innings;
+      document.getElementById('playerCountLabel').textContent = state.playerCount;
+    }
+
+    ['name1', 'name2', 'name3', 'name4', 'target'].forEach(id => {
+      document.getElementById(id).addEventListener('input', render);
+    });
+
+    document.getElementById('playerCount').addEventListener('change', updateNameInputsVisibility);
+
+    updateNameInputsVisibility();
+    render();
+    renderHistory();
+  </script>
+</body>
+</html>
