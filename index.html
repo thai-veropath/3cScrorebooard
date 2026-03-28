@@ -665,8 +665,9 @@
         players: createDefaultPlayers(count),
         currentPlayerIndex: 0,
         innings: 0,
-        target: 30,
-        history: []
+        history: [],
+        currentTurnStarted: false,
+        target: 30
       };
     }
 
@@ -676,7 +677,8 @@
         players: state.players,
         currentPlayerIndex: state.currentPlayerIndex,
         innings: state.innings,
-        target: state.target
+        target: state.target,
+        currentTurnStarted: state.currentTurnStarted
       }));
     }
 
@@ -688,6 +690,37 @@
     function avg(score, turns) {
       if (!turns) return '0.00';
       return (score / turns).toFixed(2);
+    }
+
+    function computeInnings() {
+      if (!state.players.length) return 0;
+      return Math.min(...state.players.map(p => p.turns));
+    }
+
+    function normalizeTurnState() {
+      state.innings = computeInnings();
+    }
+
+    function advanceToPlayer(targetIndex, asScoredTurn) {
+      const total = state.playerCount;
+      if (total <= 0) return;
+
+      let index = state.currentPlayerIndex;
+      let moved = false;
+
+      while (index !== targetIndex) {
+        index = (index + 1) % total;
+        moved = true;
+        state.players[index].turns += 1;
+      }
+
+      if (!moved && !state.currentTurnStarted) {
+        state.players[targetIndex].turns += 1;
+      }
+
+      state.currentPlayerIndex = targetIndex;
+      state.currentTurnStarted = true;
+      normalizeTurnState();
     }
 
     function getPlayerNameFromInput(index) {
@@ -736,6 +769,7 @@
       state.players = newPlayers;
       state.currentPlayerIndex = 0;
       state.innings = 0;
+      state.currentTurnStarted = false;
       state.target = target > 0 ? target : 30;
       document.getElementById('winner').textContent = '';
       updateNameInputsVisibility();
@@ -747,13 +781,19 @@
       if (document.getElementById('winner').textContent) return;
       syncNamesFromInputs();
       saveStateSnapshot(`P${playerId} ${delta > 0 ? '+' : ''}${delta}`);
-      const player = state.players.find(p => p.id === playerId);
-      if (!player) return;
 
+      const targetIndex = state.players.findIndex(p => p.id === playerId);
+      if (targetIndex === -1) return;
+
+      if (targetIndex !== state.currentPlayerIndex || !state.currentTurnStarted) {
+        advanceToPlayer(targetIndex, true);
+      }
+
+      const player = state.players[targetIndex];
       player.score += delta;
       if (player.score < 0) player.score = 0;
-      if (delta > 0) player.turns += 1;
 
+      normalizeTurnState();
       checkWinner();
       render();
     }
@@ -761,8 +801,8 @@
     function switchTurn() {
       syncNamesFromInputs();
       saveStateSnapshot('Đổi lượt');
-      state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.playerCount;
-      state.innings += 1;
+      const nextIndex = (state.currentPlayerIndex + 1) % state.playerCount;
+      advanceToPlayer(nextIndex, false);
       render();
     }
 
@@ -774,6 +814,7 @@
       state.currentPlayerIndex = last.currentPlayerIndex;
       state.innings = last.innings;
       state.target = last.target;
+      state.currentTurnStarted = !!last.currentTurnStarted;
 
       document.getElementById('playerCount').value = String(state.playerCount);
       document.getElementById('target').value = String(state.target);
@@ -798,6 +839,7 @@
       });
       state.currentPlayerIndex = 0;
       state.innings = 0;
+      state.currentTurnStarted = false;
       document.getElementById('winner').textContent = '';
       render();
     }
@@ -873,6 +915,7 @@
     function render() {
       syncNamesFromInputs();
       state.target = parseInt(document.getElementById('target').value || '30', 10) || 30;
+      normalizeTurnState();
       renderPlayers();
 
       const currentPlayer = state.players[state.currentPlayerIndex];
