@@ -8,8 +8,28 @@
   <meta name="theme-color" content="#0f172a" />
   <style>
     html, body, .app, .panel, .player-card, .controls-panel, .history-panel {
-      color: #f8fafc !important;
-      -webkit-text-fill-color: #f8fafc;
+      background: var(--panel);
+      border-radius: 16px;
+      padding: 10px;
+      min-height: 0;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    .side-panel {
+      display: none;
+      background: var(--panel);
+      border-radius: 16px;
+      padding: 10px;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .app.layout-4 .side-panel {
+      display: grid;
+      grid-template-rows: auto auto auto 1fr;
+      gap: 8px;
+      height: 100%;
     }
 
     .player-card *, .controls-panel *, .history-panel *, .topbar * {
@@ -60,12 +80,22 @@
       max-width: 100vw;
     }
 
+    .app.layout-4 {
+      grid-template-columns: minmax(0, 1fr) 170px;
+      grid-template-rows: minmax(0, 1fr);
+      align-items: stretch;
+    }
+
     .topbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 8px;
       min-height: 44px;
+    }
+
+    .app.layout-4 .topbar {
+      display: none;
     }
 
     .title {
@@ -319,6 +349,10 @@
       min-width: 0;
     }
 
+    .app.layout-4 .bottom-panel {
+      display: none;
+    }
+
     .controls-panel, .history-panel {
       display: grid;
       grid-template-rows: auto 1fr;
@@ -343,6 +377,22 @@
       min-width: 0;
     }
 
+    .side-controls {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .side-controls button {
+      min-height: 44px;
+      font-size: clamp(12px, 1vw, 16px);
+      padding: 10px 8px;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .controls-grid button {
       min-height: 44px;
       font-size: clamp(12px, 1.2vw, 18px);
@@ -354,16 +404,28 @@
     }
 
     .info-bar {
-      color: var(--muted) !important;
-      -webkit-text-fill-color: var(--muted) !important;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      color: var(--muted);
+      color: var(--muted) !important;
+      -webkit-text-fill-color: var(--muted) !important;
       font-size: clamp(11px, 1vw, 15px);
       flex-wrap: wrap;
       gap: 8px;
       min-width: 0;
+    }
+
+    .side-info {
+      display: grid;
+      gap: 6px;
+      font-size: 13px;
+      color: var(--muted) !important;
+      -webkit-text-fill-color: var(--muted) !important;
+    }
+
+    .side-info strong {
+      color: var(--text) !important;
+      -webkit-text-fill-color: var(--text) !important;
     }
 
     .winner {
@@ -375,15 +437,31 @@
     }
 
     .history-title {
-      color: var(--text) !important;
-      -webkit-text-fill-color: var(--text) !important;
       font-size: 14px;
       font-weight: 700;
-      color: var(--text);
+      color: var(--text) !important;
+      -webkit-text-fill-color: var(--text) !important;
       margin-bottom: 4px;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+    }
+
+    .side-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .side-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: var(--text) !important;
+      -webkit-text-fill-color: var(--text) !important;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     .history-list {
@@ -410,6 +488,18 @@
     }
 
     @media (max-width: 900px) and (orientation: portrait) {
+      .app.layout-4 {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto auto;
+      }
+
+      .app.layout-4 .topbar {
+        display: flex;
+      }
+
+      .app.layout-4 .side-panel {
+        display: none;
+      }
       html, body {
         overflow: auto;
       }
@@ -444,6 +534,10 @@
         min-height: auto;
         height: auto;
         max-height: none;
+      }
+
+      .app.layout-4 .bottom-panel {
+        display: grid;
       }
 
       .controls-panel,
@@ -509,16 +603,23 @@
         grid-template-columns: minmax(0, 1.45fr) minmax(0, 0.9fr);
       }
 
+      .app.layout-4 {
+        grid-template-columns: minmax(0, 1fr) 156px;
+      }
+
+      .side-controls button,
       .controls-grid button {
         min-height: 34px;
         font-size: clamp(11px, 0.95vw, 15px);
       }
 
+      .side-title,
       .history-title {
         font-size: 13px;
       }
 
-      .history-list {
+      .history-list,
+      .side-info {
         font-size: 12px;
       }
     }
@@ -591,6 +692,30 @@
       <div class="history-panel">
         <div class="history-title">Lịch sử thao tác</div>
         <div id="historyList" class="history-list"></div>
+      </div>
+    </div>
+
+    <div id="sidePanel" class="side-panel">
+      <div class="side-header">
+        <div class="side-title">🎱 Scoreboard</div>
+        <button class="menu-btn blue" onclick="toggleMenu(true)">Menu</button>
+      </div>
+      <div class="side-controls">
+        <button class="blue" onclick="switchTurn()">Đổi lượt</button>
+        <button class="orange" onclick="undoMove()">Undo</button>
+        <button onclick="newGame()">Ván mới</button>
+        <button class="red" onclick="resetAll()">Reset hết</button>
+      </div>
+      <div class="side-info">
+        <div>Lượt hiện tại: <strong id="currentPlayerLabelSide">Player 1</strong></div>
+        <div>Target: <strong id="targetLabelSide">30</strong></div>
+        <div>Innings: <strong id="inningCountSide">0</strong></div>
+        <div>Players: <strong id="playerCountLabelSide">4</strong></div>
+        <div id="winnerSide" class="winner"></div>
+      </div>
+      <div class="history-panel fixed-scroll">
+        <div class="history-title">Lịch sử thao tác</div>
+        <div id="historyListSide" class="history-list"></div>
       </div>
     </div>
   </div>
@@ -700,6 +825,25 @@
     
 
     function normalizeTurnState() {
+      const currentTurns = state.players[state.currentPlayerIndex]?.turns || 0;
+      if (state.currentPlayerIndex === 0) {
+        for (let i = 1; i < state.players.length; i += 1) {
+          if (state.players[i].turns < Math.max(0, currentTurns - 1)) {
+            state.players[i].turns = Math.max(0, currentTurns - 1);
+          }
+        }
+      } else {
+        for (let i = 0; i < state.currentPlayerIndex; i += 1) {
+          if (state.players[i].turns < currentTurns) {
+            state.players[i].turns = currentTurns;
+          }
+        }
+        for (let i = state.currentPlayerIndex + 1; i < state.players.length; i += 1) {
+          if (state.players[i].turns < Math.max(0, currentTurns - 1)) {
+            state.players[i].turns = Math.max(0, currentTurns - 1);
+          }
+        }
+      }
       state.innings = computeInnings();
     }
 
@@ -861,7 +1005,10 @@
 
     function checkWinner() {
       const winner = state.players.find(p => p.score >= state.target);
-      document.getElementById('winner').textContent = winner ? `🏆 ${winner.name} thắng!` : '';
+      const text = winner ? `🏆 ${winner.name} thắng!` : '';
+      document.getElementById('winner').textContent = text;
+      const side = document.getElementById('winnerSide');
+      if (side) side.textContent = text;
     }
 
     function createPlayerCard(player, isActive) {
@@ -901,30 +1048,39 @@
     }
 
     function renderHistory() {
-      const historyList = document.getElementById('historyList');
-      if (state.history.length === 0) {
-        historyList.innerHTML = "<div class='history-item'>Chưa có thao tác nào.</div>";
-        return;
-      }
-
-      historyList.innerHTML = state.history
-        .slice()
-        .reverse()
-        .map(item => `<div class="history-item">${escapeHtml(item.action)}</div>`)
-        .join('');
+      const lists = [document.getElementById('historyList'), document.getElementById('historyListSide')].filter(Boolean);
+      const html = state.history.length === 0
+        ? "<div class='history-item'>Chưa có thao tác nào.</div>"
+        : state.history.slice().reverse().map(item => `<div class="history-item">${escapeHtml(item.action)}</div>`).join('');
+      lists.forEach(el => {
+        el.innerHTML = html;
+      });
     }
 
     function render() {
       syncNamesFromInputs();
       state.target = parseInt(document.getElementById('target').value || '30', 10) || 30;
       normalizeTurnState();
+      const app = document.querySelector('.app');
+      const isFourPlayerLayout = state.playerCount === 4;
+      app.classList.toggle('layout-4', isFourPlayerLayout);
       renderPlayers();
 
       const currentPlayer = state.players[state.currentPlayerIndex];
-      document.getElementById('currentPlayerLabel').textContent = currentPlayer ? currentPlayer.name : '-';
+      const currentName = currentPlayer ? currentPlayer.name : '-';
+      document.getElementById('currentPlayerLabel').textContent = currentName;
       document.getElementById('targetLabel').textContent = state.target;
       document.getElementById('inningCount').textContent = state.innings;
       document.getElementById('playerCountLabel').textContent = state.playerCount;
+
+      const sideCurrent = document.getElementById('currentPlayerLabelSide');
+      if (sideCurrent) sideCurrent.textContent = currentName;
+      const sideTarget = document.getElementById('targetLabelSide');
+      if (sideTarget) sideTarget.textContent = state.target;
+      const sideInning = document.getElementById('inningCountSide');
+      if (sideInning) sideInning.textContent = state.innings;
+      const sideCount = document.getElementById('playerCountLabelSide');
+      if (sideCount) sideCount.textContent = state.playerCount;
     }
 
     ['name1', 'name2', 'name3', 'name4', 'target'].forEach(id => {
