@@ -28,12 +28,8 @@
     }
 
     html, body {
-      margin: 0;
-      background: var(--bg);
-      color: var(--text);
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
+      min-height: 100dvh;
+      padding: env(safe-area-inset-top, 0) env(safe-area-inset-right, 0) env(safe-area-inset-bottom, 0) env(safe-area-inset-left, 0);
     }
 
     body {
@@ -41,13 +37,14 @@
     }
 
     .app {
-      width: 100vw;
-      height: 100vh;
+      width: 100%;
+      height: var(--app-height, 100dvh);
       display: grid;
-      grid-template-rows: auto 1fr minmax(96px, 24vh);
+      grid-template-rows: auto minmax(0, 1fr) auto;
       gap: 8px;
       padding: 8px;
       overflow: hidden;
+      min-height: 0;
     }
 
     .topbar {
@@ -185,6 +182,7 @@
       display: grid;
       gap: 8px;
       overflow: hidden;
+      align-items: stretch;
     }
 
     .players.players-2 {
@@ -279,10 +277,11 @@
 
     .bottom-panel {
       display: grid;
-      grid-template-columns: 1.1fr 1.4fr;
+      grid-template-columns: minmax(300px, 1.1fr) minmax(220px, 1fr);
       gap: 8px;
       min-height: 0;
-      height: 100%;
+      height: min(24dvh, 180px);
+      max-height: min(24dvh, 180px);
       overflow: hidden;
     }
 
@@ -341,6 +340,7 @@
     .history-list {
       min-height: 0;
       height: 100%;
+      max-height: 100%;
       overflow-y: auto;
       overflow-x: hidden;
       font-size: 13px;
@@ -364,7 +364,7 @@
 
       .app {
         height: auto;
-        min-height: 100vh;
+        min-height: 100dvh;
         grid-template-rows: auto auto auto;
       }
 
@@ -391,6 +391,7 @@
         grid-template-columns: 1fr;
         min-height: auto;
         height: auto;
+        max-height: none;
       }
 
       .controls-panel,
@@ -400,6 +401,47 @@
 
       .history-list {
         max-height: 180px;
+      }
+    }
+
+    @media (max-height: 500px) and (orientation: landscape) {
+      .title {
+        font-size: 18px;
+      }
+
+      .topbar {
+        min-height: 38px;
+      }
+
+      .player-card {
+        padding: 8px;
+      }
+
+      .small-stats {
+        margin-bottom: 2px;
+      }
+
+      .btn-grid {
+        gap: 6px;
+        margin-top: 4px;
+      }
+
+      .btn-grid button {
+        min-height: 36px;
+        padding: 6px;
+      }
+
+      .btn-grid button.big {
+        min-height: 40px;
+      }
+
+      .bottom-panel {
+        height: min(22dvh, 138px);
+        max-height: min(22dvh, 138px);
+      }
+
+      .controls-grid button {
+        min-height: 38px;
       }
     }
   </style>
@@ -732,6 +774,16 @@
 
     document.getElementById('playerCount').addEventListener('change', updateNameInputsVisibility);
 
+    function setAppHeight() {
+      document.documentElement.style.setProperty('--app-height', `${window.innerHeight}px`);
+    }
+
+    window.addEventListener('resize', setAppHeight);
+    window.addEventListener('orientationchange', () => {
+      setTimeout(setAppHeight, 150);
+    });
+
+    setAppHeight();
     updateNameInputsVisibility();
     render();
     renderHistory();
