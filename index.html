@@ -448,10 +448,15 @@
     }
 
     .side-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: 1fr;
       gap: 8px;
+      align-items: start;
+      justify-items: stretch;
+    }
+
+    .side-header .menu-btn {
+      width: 100%;
     }
 
     .side-title {
